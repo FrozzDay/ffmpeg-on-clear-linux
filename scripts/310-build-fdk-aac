@@ -3,24 +3,34 @@
 name="fdk-aac"
 echo "building ${name}"
 
-mkdir -p builddir && cd builddir
-rm -fr ${name}
+mkdir -p builddir && cd builddir || exit $?
+
+builddir="${PWD}"
+cleanup(){
+cd "${builddir}" ; rm -fr "${name}" && echo -e "\nDirectory cleaned!";
+}
+trap cleanup EXIT
+
+find . -type f -mtime +1 -exec rm -rf {} \;
 
 if [[ ! -f ${name}.tar.gz ]]; then
     url="https://github.com/mstorsjo/${name}"
     echo "git clone --depth 1 ${url}"
-    git clone --depth 1 ${url}
+    if ! git clone --depth 1 ${url}; then
+        echo something wrong with git clone, skipping...
+        exit 1
+    fi
     tar czf ${name}.tar.gz ${name}
 else
     tar xzf ${name}.tar.gz
 fi
 
 if [[ -d ${name} ]]; then
-    cores=`grep -c '^cpu[0-9]' /proc/stat`
-    cd ${name}
+    cores=$(grep -c '^cpu[0-9]' /proc/stat)
+    cd ${name} || exit $?
     autoreconf -fiv && \
     ./configure --prefix=/usr/local --enable-shared && \
-    make -j ${cores} && make install && \
+    make -j "${cores}" && make install && \
     rm -f /usr/local/lib/libfdk-aac.la /usr/local/lib/libfdk-aac.a
 fi
 

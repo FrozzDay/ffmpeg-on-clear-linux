@@ -3,20 +3,30 @@
 name="SVT-AV1"
 echo "building ${name}"
 
-mkdir -p builddir && cd builddir
-rm -fr ${name}
+mkdir -p builddir && cd builddir || exit $?
+
+builddir="${PWD}"
+cleanup(){
+cd "${builddir}" ; rm -fr "${name}" && echo -e "\nDirectory cleaned!";
+}
+trap cleanup EXIT
+
+find . -type f -mtime +1 -exec rm -rf {} \;
 
 if [[ ! -f ${name}.tar.gz ]]; then
     url="https://gitlab.com/AOMediaCodec/${name}.git"
     echo "git clone --depth 1 ${url}"
-    git clone --depth 1 ${url}
+    if ! git clone --depth 1 ${url}; then
+        echo something wrong with git clone, skipping...
+        exit 1
+    fi
     tar czf ${name}.tar.gz ${name}
 else
     tar xzf ${name}.tar.gz
 fi
 
 if [[ -d ${name} ]]; then
-    cd ${name}
+    cd ${name} || exit $?
     # Only the encoder is supported by FFmpeg, so the decoder is disabled.
     cmake -B build -G Ninja \
         -DBUILD_DEC=0 \

@@ -3,13 +3,21 @@
 name="aom"
 echo "building ${name}"
 
-mkdir -p builddir && cd builddir
-rm -fr ${name} ${name}_build
+mkdir -p builddir && cd builddir || exit $?
+
+builddir="${PWD}"
+cleanup(){
+cd "${builddir}" ; rm -fr "${name}" && echo -e "\nDirectory cleaned!";
+}
+trap cleanup EXIT
 
 if [[ ! -f ${name}.tar.gz ]]; then
     url="https://aomedia.googlesource.com/aom"
     echo "git clone --depth 1 ${url}"
-    git clone --depth 1 ${url}
+    if ! git clone --depth 1 ${url}; then
+        echo something wrong with git clone, skipping...
+        exit 1
+    fi
     tar czf ${name}.tar.gz ${name}
 else
     tar xzf ${name}.tar.gz
@@ -21,7 +29,8 @@ if [[ ! -f /usr/local/lib/pkgconfig/libvmaf.pc ]]; then
 fi
 
 if [[ -d ${name} ]]; then
-    mkdir -p ${name}_build && cd ${name}_build
+    cd ${name} || exit $?
+    mkdir -p ${name}_build && cd ${name}_build || exit $?
     export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
     export LD_LIBRARY_PATH=/usr/local/lib
     export CXXFLAGS="$CXXFLAGS -flto=auto -ffat-lto-objects -fuse-linker-plugin"
@@ -41,7 +50,7 @@ if [[ -d ${name} ]]; then
         -DENABLE_TOOLS=0 \
         -DCONFIG_TUNE_VMAF=1 \
         -DCONFIG_WEBM_IO=1 \
-        -DCMAKE_BUILD_TYPE=Release ../aom && \
+        -DCMAKE_BUILD_TYPE=Release ../ && \
     ninja && ninja install && \
     rm -f /usr/local/lib/libaom.a
 fi

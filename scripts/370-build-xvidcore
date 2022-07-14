@@ -4,22 +4,32 @@ name="xvidcore"
 version="1.3.7"
 echo "building ${name}-${version}"
 
-mkdir -p builddir && cd builddir
-rm -fr ${name}
+mkdir -p builddir && cd builddir || exit $?
+
+builddir="${PWD}"
+cleanup(){
+cd "${builddir}" ; rm -fr "${name}" && echo -e "\nDirectory cleaned!";
+}
+trap cleanup EXIT
+
+find . -type f -mtime +1 -exec rm -rf {} \;
 
 if [[ ! -f ${name}-${version}.tar.gz ]]; then
     url="https://downloads.xvid.com/downloads/${name}-${version}.tar.gz"
     echo "curl -LO ${url}"
     curl -LO ${url}
 fi
-
+if ! tar tzf ${name}-${version}.tar.gz &>/dev/null; then
+    echo corrupted archive, skipping...
+    exit 1
+fi
 tar xzf ${name}-${version}.tar.gz
 
 if [[ -d ${name} ]]; then
-    cores=`grep -c '^cpu[0-9]' /proc/stat`
-    cd ${name}/build/generic
+    cores=$(grep -c '^cpu[0-9]' /proc/stat)
+    cd ${name}/build/generic || exit $?
     ./configure --prefix=/usr/local --disable-static && \
-    make -j ${cores} && \
+    make -j "${cores}" && \
     rm -f /usr/local/lib/libxvidcore.so* && \
     make install && \
     chmod 755 /usr/local/lib/libxvidcore.so && \

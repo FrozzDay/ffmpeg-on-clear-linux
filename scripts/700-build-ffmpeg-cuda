@@ -7,13 +7,22 @@ name="ffmpeg"
 branch="release/5.1"
 echo "building ${name} branch ${branch}"
 
-mkdir -p builddir && cd builddir
-rm -fr ${name}
+mkdir -p builddir && cd builddir || exit $?
+builddir="${PWD}"
+cleanup(){
+cd "${builddir}" ; rm -fr "${name}" && echo -e "\nDirectory cleaned!";
+}
+trap cleanup EXIT
+
+find . -type f -mtime +1 -exec rm -rf {} \;
 
 if [[ ! -f ${name}.tar.gz ]]; then
     url="https://git.ffmpeg.org/ffmpeg.git"
     echo "git clone --depth 1 --branch ${branch} ${url}"
-    git clone --depth 1 --branch ${branch} ${url}
+    if ! git clone --depth 1 --branch ${branch} ${url}; then
+        echo something wrong with git clone, skipping...
+        exit 1
+    fi
     tar czf ${name}.tar.gz ${name}
 else
     tar xzf ${name}.tar.gz
@@ -45,8 +54,8 @@ if [[ -d ${name} ]]; then
     export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
     export LD_LIBRARY_PATH=/usr/local/lib
 
-    cores=`grep -c '^cpu[0-9]' /proc/stat`
-    cd ${name}
+    cores=$(grep -c '^cpu[0-9]' /proc/stat)
+    cd ${name} || exit $?
 
     if [[ -f /opt/nvidia/bin/nvidia-settings ]]; then
         vdpau="--enable-vdpau"
@@ -84,7 +93,7 @@ if [[ -d ${name} ]]; then
         --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 \
         --enable-libxcb --enable-libxcb-shape --enable-libxcb-shm \
         --enable-libxcb-xfixes --enable-libxml2 --enable-libxvid \
-        --enable-opengl --enable-postproc --enable-sdl2 --enable-vaapi $vdpau $vulkan \
+        --enable-opengl --enable-postproc --enable-sdl2 --enable-vaapi "$vdpau" "$vulkan" \
         --enable-zlib --enable-ffplay --enable-gpl --enable-nonfree \
         --enable-version3 --enable-lto --enable-cuda-nvcc --nvcc=/usr/local/cuda/bin/nvcc \
         --nvccflags="$_CC -gencode arch=${cudaarch},code=${cudacode} -O2 -m64 -ptx" \
@@ -95,6 +104,6 @@ if [[ -d ${name} ]]; then
         sed -i 's/^#define HAVE_VAAPI_DRM 1/#define HAVE_VAAPI_DRM 0/' config.h
     fi
 
-    make -j ${cores} && make install
+    make -j "${cores}" && make install
 fi
 

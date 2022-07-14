@@ -3,8 +3,15 @@
 name="lame-3.100"
 echo "building ${name}"
 
-mkdir -p builddir && cd builddir
-rm -fr ${name}
+mkdir -p builddir && cd builddir || exit $?
+
+builddir="${PWD}"
+cleanup(){
+cd "${builddir}" ; rm -fr "${name}" && echo -e "\nDirectory cleaned!";
+}
+trap cleanup EXIT
+
+find . -type f -mtime +1 -exec rm -rf {} \;
 
 if [[ ! -f ${name}.tar.gz ]]; then
     url="https://downloads.sourceforge.net/project/lame/lame/3.100/${name}.tar.gz"
@@ -12,13 +19,17 @@ if [[ ! -f ${name}.tar.gz ]]; then
     curl -LO $url
 fi
 
+if ! tar tzf ${name}.tar.gz &>/dev/null; then
+    echo corrupted archive, skipping...
+    exit 1
+fi
 tar xzf ${name}.tar.gz
 
 if [[ -d ${name} ]]; then
-    cores=`grep -c '^cpu[0-9]' /proc/stat`
-    cd ${name}
+    cores=$(grep -c '^cpu[0-9]' /proc/stat)
+    cd ${name} || exit $?
     ./configure --prefix=/usr/local --enable-shared --enable-nasm && \
-    make -j ${cores} && make install && \
+    make -j "${cores}" && make install && \
     rm -f /usr/local/lib/libmp3lame.la /usr/local/lib/libmp3lame.a
 fi
 
