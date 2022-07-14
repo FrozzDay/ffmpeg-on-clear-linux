@@ -56,7 +56,7 @@ cd scripts
 ...
 ```
 
-The `builddir` (once created) serves as a cache folder. Remove the correspondent `*.tar.gz` file(s) to re-fetch or re-clone from the internet.
+The `builddir` (once created) serves as a cache folder. It files automaticaly deleted after a day. The subfolders get deleted after exiting the scripts.
 
 I'm hoping that the build process succeeds for you as it does for me. However, I may have a bundle installed that's missing in `000-install-dependencies`. Please reach out if that's the case. The Media SDK is included in the FFmpeg build for Intel hardware, but not yet tested what else is needed for that platform.
 
@@ -155,7 +155,7 @@ layout.css.devPixelsPerPx          1.12
 
 ### <a id="verify-acceleration">How can I make sure hardware acceleration is working?
 
-In Firefox, check the `about::support` page. In Brave, Chromium, Google Chrome, and Vivaldi, check the `chrome://gpu` page. Another way is running a utility suited for your hardware while watching a video.
+In Firefox, check the `about:support` page. In Brave, Chromium, Google Chrome, and Vivaldi, check the `chrome://gpu` page. Another way is running a utility suited for your hardware while watching a video.
 
 1. `watch -n 1 /opt/nvidia/bin/nvidia-smi` to check if "GPU-Util" percentage goes up
 2. `sudo intel_gpu_top` to check if percentage under the "Video" section goes up
