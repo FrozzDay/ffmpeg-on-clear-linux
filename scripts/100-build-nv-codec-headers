@@ -10,7 +10,7 @@ version=$(echo "$version" | cut -d. -f1-2) # want major and minor, not revision
 
 if [[ $(bc -l <<< "${version} < 470.57") -eq 1 ]]; then
     echo "$0: NVIDIA graphics driver is older than 470.57, skipping..."
-    exit 1
+    exit 0
 fi
 
 nvver="11.1.5.1"
