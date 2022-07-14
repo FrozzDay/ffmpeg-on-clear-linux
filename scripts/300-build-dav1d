@@ -1,8 +1,7 @@
 #!/bin/bash
 
 name="dav1d"
-branch="1.0.0"
-echo "building ${name} branch ${branch}"
+echo "building ${name}"
 
 mkdir -p builddir && cd builddir || exit $?
 
@@ -16,8 +15,8 @@ find . -type f -mtime +1 -exec rm -rf {} \;
 
 if [[ ! -f ${name}.tar.gz ]]; then
     url="https://code.videolan.org/videolan/${name}.git"
-    echo "git clone --depth 1 --branch ${branch} ${url}"
-    if ! git clone --depth 1 --branch ${branch} ${url}; then
+    echo "git clone --depth 1 ${url}"
+    if ! git clone --depth 1 ${url}; then
         echo something wrong with git clone, skipping...
         exit 1
     fi
