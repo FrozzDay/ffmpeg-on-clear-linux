@@ -3,25 +3,35 @@
 name="x264"
 echo "building ${name}"
 
-mkdir -p builddir && cd builddir
-rm -fr ${name} ${name}-generic10 ${name}-generic
+mkdir -p builddir && cd builddir || exit $?
+
+builddir="${PWD}"
+cleanup(){
+cd "${builddir}" ; rm -fr "${name}"-generic10 "${name}"-generic && echo -e "\nDirectory cleaned!";
+}
+trap cleanup EXIT
+
+find . -type f -mtime +1 -exec rm -rf {} \;
 
 if [[ ! -f ${name}.tar.gz ]]; then
     url="https://code.videolan.org/videolan/x264.git"
     echo "git clone --depth 1 ${url}"
-    git clone --depth 1 ${url}
+    if ! git clone --depth 1 ${url}; then
+        echo something wrong with git clone, skipping...
+        exit 1
+    fi
     tar czf ${name}.tar.gz ${name}
 else
     tar xzf ${name}.tar.gz
 fi
 
 if [[ -d ${name} ]]; then
-    cores=`grep -c '^cpu[0-9]' /proc/stat`
+    cores=$(grep -c '^cpu[0-9]' /proc/stat)
     cp -a ${name} ${name}-generic10
     mv ${name} ${name}-generic
 
     echo "Building the ${name} 10-bit shared library..."
-    cd ${name}-generic10
+    cd ${name}-generic10 || exit $?
 
     # Multilib support.
     patch -p1 < ../../patches/x264-high-bit-depth-soname.patch || exit $?
@@ -30,16 +40,16 @@ if [[ -d ${name} ]]; then
         --extra-ldflags="-L/usr/local/lib" --enable-lto --enable-shared \
         --enable-pic --enable-strip --disable-lavf --disable-avs --disable-swscale \
         --disable-ffms --disable-opencl --disable-cli --bit-depth=10 && \
-    make -j ${cores} || exit $?
+    make -j "${cores}" || exit $?
     make install || exit $?
 
     echo "Building the ${name} 8-bit shared library and cli tools..."
-    cd ../${name}-generic
+    cd ../${name}-generic || exit $?
 
     ./configure --prefix=/usr/local --extra-cflags="-I/usr/local/include" \
         --extra-ldflags="-L/usr/local/lib" --enable-lto --enable-shared \
         --enable-pic --enable-strip --disable-lavf --disable-avs --disable-swscale \
         --disable-ffms --disable-opencl && \
-    make -j ${cores} && make install
+    make -j "${cores}" && make install
 fi
 

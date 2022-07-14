@@ -3,20 +3,30 @@
 name="dav1d"
 echo "building ${name}"
 
-mkdir -p builddir && cd builddir
-rm -fr ${name}
+mkdir -p builddir && cd builddir || exit $?
+
+builddir="${PWD}"
+cleanup(){
+cd "${builddir}" ; rm -rf "${name}" && echo -e "\nDirectory cleaned!";
+}
+trap cleanup EXIT
+
+find . -type f -mtime +1 -exec rm -rf {} \;
 
 if [[ ! -f ${name}.tar.gz ]]; then
     url="https://code.videolan.org/videolan/${name}.git"
     echo "git clone --depth 1 ${url}"
-    git clone --depth 1 ${url}
+    if ! git clone --depth 1 ${url}; then
+        echo something wrong with git clone, skipping...
+        exit 1
+    fi
     tar czf ${name}.tar.gz ${name}
 else
     tar xzf ${name}.tar.gz
 fi
 
 if [[ -d ${name} ]]; then
-    mkdir -p ${name}/build && cd ${name}/build
+    mkdir -p ${name}/build && cd ${name}/build || exit $?
     meson setup \
         -Denable_asm=true \
         -Denable_examples=false \

@@ -4,20 +4,30 @@ name="x265"
 version="3.5"
 echo "building ${name}_${version}"
 
-mkdir -p builddir && cd builddir
-rm -fr ${name}_${version}
+mkdir -p builddir && cd builddir || exit $?
+builddir="${PWD}"
+cleanup(){
+cd "${builddir}" ; rm -fr "${name}"_"${version}" && echo -e "\nDirectory cleaned!";
+}
+trap cleanup EXIT
+
+find . -type f -mtime +1 -exec rm -rf {} \;
 
 if [[ ! -f ${name}_${version}.tar.gz ]]; then
     url="https://bitbucket.org/multicoreware/x265_git/downloads/${name}_${version}.tar.gz"
     echo "curl -LO ${url}"
     curl -LO ${url}
 fi
+if ! tar tzf ${name}_${version}.tar.gz &>/dev/null; then
+    echo corrupted archive, skipping...
+    exit 1
+fi
 
 tar xzf ${name}_${version}.tar.gz
 
 if [[ -d ${name}_${version} ]]; then
-    cores=`grep -c '^cpu[0-9]' /proc/stat`
-    cd ${name}_${version}
+    #cores=$(grep -c '^cpu[0-9]' /proc/stat)
+    cd ${name}_${version} || exit $?
 
     # Fix for ENABLE_PIC.
     sed -i 's/-fPIC/-fPIC -DPIC/' source/CMakeLists.txt
@@ -27,7 +37,7 @@ if [[ -d ${name}_${version} ]]; then
     patch -p0 < ../../patches/x265-high-bit-depth-soname.patch || exit $?
 
     echo "Building the ${name} 12-bit shared library..."
-    mkdir -p 12bit && cd 12bit
+    mkdir -p 12bit && cd 12bit || exit 1
 
     cmake -Wno-dev -G Ninja -DCMAKE_POSITION_INDEPENDENT_CODE=1 \
         -DCMAKE_SKIP_RPATH:BOOL=YES -DCMAKE_INSTALL_PREFIX=/usr/local \
@@ -37,7 +47,7 @@ if [[ -d ${name}_${version} ]]; then
     ninja install || exit $?
 
     echo "Building the ${name} 10-bit shared library..."
-    cd .. && mkdir -p 10bit && cd 10bit
+    cd .. && mkdir -p 10bit && cd 10bit || exit $?
 
     cmake -Wno-dev -G Ninja -DCMAKE_POSITION_INDEPENDENT_CODE=1 \
         -DCMAKE_SKIP_RPATH:BOOL=YES -DCMAKE_INSTALL_PREFIX=/usr/local \
@@ -47,7 +57,7 @@ if [[ -d ${name}_${version} ]]; then
     ninja install || exit $?
 
     echo "Building the ${name} 8-bit shared library and cli tools..."
-    cd .. && mkdir -p 8bit && cd 8bit
+    cd .. && mkdir -p 8bit && cd 8bit || exit $?
 
     # Restore api.cpp for the 8-bit build.
     cp ../source/encoder/api.cpp.orig ../source/encoder/api.cpp
