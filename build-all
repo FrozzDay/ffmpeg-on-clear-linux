@@ -5,6 +5,7 @@ if [[ ! -d scripts ]]; then
     echo "sudo bash build-all"
     exit 1
 fi
+<<<<<<< HEAD
 #cleanup(){ 
 #rm -fr "${PWD}"/builddir/ && echo -e "\nDirectory cleaned!";
 #}
@@ -14,6 +15,17 @@ cd scripts
 #for script in $(ls [0-9][0-9][0-9]-*); do
 for script in [0-9][0-9][0-9]-* ; do
     [[ -e "${script}" ]] || exit 1
+=======
+
+if [[ "$USER" != "root" ]]; then
+    echo "Please run the script as super user."
+    exit 1
+fi
+
+cd scripts
+
+for script in [0-9][0-9][0-9]-* ; do
+>>>>>>> e19cb842bf8a0e89c0a326ddbeb79b8f3b39d154
     echo "Launching ${script}..."
     ./"${script}" || exit $?
     echo 

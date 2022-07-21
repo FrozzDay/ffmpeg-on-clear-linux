@@ -2,8 +2,9 @@
 # Usage: ./000-install-dependencies
 
 # Extract installed bundles; append space to the end of each line.
-installed_bundles=`swupd bundle-list | grep '^ - ' | sed 's/$/ /g'`
+installed_bundles=$(swupd bundle-list | grep '^ - ' | sed 's/$/ /g')
 
+osrel=$(grep VERSION_ID /etc/os-release | cut -f2 -d=)
 add_list=""
 count=0
 
@@ -18,7 +19,7 @@ for bundle_name in \
     devpkg-mesa devpkg-numactl devpkg-opus devpkg-pulseaudio      \
     devpkg-SDL2 devpkg-SDL2_gfx devpkg-SDL2_image devpkg-SDL2_net \
     devpkg-SDL2_ttf devpkg-speex devpkg-v4l-utils devpkg-zlib     \
-    curl unzip                                                    \
+    curl unzip package-utils                                      \
 ;do
     if [[ ! ${installed_bundles} =~ " - ${bundle_name} " ]]; then
         add_list="${add_list} ${bundle_name}"
@@ -36,11 +37,24 @@ if [[ -f /opt/nvidia/bin/nvidia-settings ]]; then
     fi
 fi
 
+# Add devpkg-lcms2 bundle. FFmpeg 5.1 requires version 2.13+.
+if [[ ! ${installed_bundles} =~ " - devpkg-lcms2 " ]]; then
+    [[ $osrel -ge 36600 ]] && add_list="${add_list} devpkg-lcms2"
+else
+    count=$(( ${count} + 1 ))
+fi
+
+# Add devpkg-wavpack bundle.
+if [[ ! ${installed_bundles} =~ " - devpkg-wavpack " ]]; then
+    [[ $osrel -ge 35950 ]] && add_list="${add_list} devpkg-wavpack"
+else
+    count=$(( ${count} + 1 ))
+fi
+
 # Buidling FFmpeg with flags "--enable-vulkan --enable-libglslang"
 # requires glslang and vulkan header files provided by developer-gpu.
 # Add bundle optionally due to missing glslang headers in CL <= 35920.
 if [[ ! ${installed_bundles} =~ " - developer-gpu " ]]; then
-    osrel=$( grep VERSION_ID /etc/os-release | cut -f2 -d= )
     [[ $osrel -ge 35730 ]] && add_list="${add_list} developer-gpu"
 else
     count=$(( ${count} + 1 ))
