@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/env bash
 
 name="vid.stab"
 echo "building ${name}"
@@ -7,7 +7,7 @@ mkdir -p builddir && cd builddir || exit $?
 
 builddir="${PWD}"
 cleanup(){
-cd "${builddir}" ; rm -fr "${name}" && echo -e "\nDirectory cleaned!";
+cd "${builddir}" || exit $? ; rm -fr "${name}" && echo -e "\nDirectory cleaned!";
 }
 trap cleanup EXIT
 

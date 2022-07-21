@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/env bash
 
 # Exit silently if the graphics driver is not installed.
 [[ ! -f /opt/nvidia/bin/nvidia-settings ]] && exit 0
@@ -10,7 +10,7 @@ mkdir -p builddir && cd builddir || exit $?
 
 builddir="${PWD}"
 cleanup(){
-cd "${builddir}" ; rm -fr "${name}" && echo -e "\nDirectory cleaned!";
+cd "${builddir}" || exit $? ; rm -fr "${name}" && echo -e "\nDirectory cleaned!";
 }
 trap cleanup EXIT
 

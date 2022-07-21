@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/env bash
 
 # Exit silently if the graphics driver is not installed.
 [[ ! -f /opt/nvidia/bin/nvidia-settings ]] && exit 0
@@ -6,11 +6,7 @@
 # Exit silently if the the graphics driver does not meet requirement.
 version=$(/opt/nvidia/bin/nvidia-settings --version | grep version)
 version=${version##* } # extract the version string from the line
-<<<<<<< HEAD
 version=$(echo "$version" | cut -d. -f1-2) # want major and minor, not revision
-=======
-version=$(echo $version | cut -d. -f1-2) # want major and minor, not revision
->>>>>>> e19cb842bf8a0e89c0a326ddbeb79b8f3b39d154
 
 if [[ $(bc -l <<< "${version} < 470.57") -eq 1 ]]; then
     echo "$0: NVIDIA graphics driver is older than 470.57, skipping..."
@@ -25,7 +21,7 @@ mkdir -p builddir && cd builddir || exit $?
 
 builddir="${PWD}"
 cleanup(){
-cd "${builddir}" ; rm -fr "${name}" && echo -e "\nDirectory cleaned!";
+cd "${builddir}" || exit $? ; rm -fr "${name}" && echo -e "\nDirectory cleaned!";
 }
 trap cleanup EXIT
 

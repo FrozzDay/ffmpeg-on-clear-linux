@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/env bash
 
 name="x265"
 version="3.5"
@@ -7,7 +7,7 @@ echo "building ${name}_${version}"
 mkdir -p builddir && cd builddir || exit $?
 builddir="${PWD}"
 cleanup(){
-cd "${builddir}" ; rm -fr "${name}"_"${version}" && echo -e "\nDirectory cleaned!";
+cd "${builddir}" || exit $? ; rm -fr "${name}"_"${version}" && echo -e "\nDirectory cleaned!";
 }
 trap cleanup EXIT
 
@@ -26,12 +26,7 @@ fi
 tar xzf ${name}_${version}.tar.gz
 
 if [[ -d ${name}_${version} ]]; then
-<<<<<<< HEAD
-    #cores=$(grep -c '^cpu[0-9]' /proc/stat)
     cd ${name}_${version} || exit $?
-=======
-    cd ${name}_${version}
->>>>>>> e19cb842bf8a0e89c0a326ddbeb79b8f3b39d154
 
     # Fix for ENABLE_PIC.
     sed -i 's/-fPIC/-fPIC -DPIC/' source/CMakeLists.txt
